@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Colors
+RED='\033[0;31m'
+ORANGE='\033[38;5;214m'
+NC='\033[0m' # No Color
+MUTED='\033[0;2m'
+
+INSTALL_DIR="$HOME/.frostty"
+
+print_message() {
+    local level=$1
+    local message=$2
+    local color=""
+
+    case $level in
+        info) color="${NC}" ;;
+        warning) color="${NC}" ;;
+        error) color="${RED}" ;;
+    esac
+
+    echo -e "${color}${message}${NC}"
+}
+
+# 1. Remove binary and directory
+if [ -d "$INSTALL_DIR" ]; then
+    print_message info "Removing installation directory: $INSTALL_DIR"
+    rm -rf "$INSTALL_DIR"
+else
+    print_message warning "Installation directory $INSTALL_DIR not found. Skipping removal."
+fi
+
+# 2. Cleanup shell config
+clean_path() {
+    local config_file=$1
+    if [ -f "$config_file" ]; then
+        if grep -q "frostty" "$config_file"; then
+             print_message info "Cleaning config from $config_file"
+             
+             # Create backup
+             cp "$config_file" "${config_file}.bak"
+             
+             # Filter out lines containing '# frostty' or '.frostty/bin'
+             # We use a temp file to store the result
+             if grep -v "# frostty" "$config_file" | grep -v "\.frostty/bin" > "${config_file}.tmp"; then
+                 mv "${config_file}.tmp" "$config_file"
+                 print_message info "${MUTED}Updates applied. Backup saved to ${config_file}.bak${NC}"
+             else
+                 print_message error "Failed to update $config_file"
+                 rm -f "${config_file}.tmp"
+             fi
+        fi
+    fi
+}
+
+XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+
+# List of common config files to check
+CANDIDATE_FILES=(
+    "$HOME/.bashrc"
+    "$HOME/.bash_profile"
+    "$HOME/.profile"
+    "${ZDOTDIR:-$HOME}/.zshrc"
+    "${ZDOTDIR:-$HOME}/.zshenv"
+    "$HOME/.config/fish/config.fish"
+    "$XDG_CONFIG_HOME/bash/.bashrc"
+    "$XDG_CONFIG_HOME/zsh/.zshrc"
+)
+
+print_message info "Checking shell configuration files..."
+for file in "${CANDIDATE_FILES[@]}"; do
+    clean_path "$file"
+done
+
+echo -e ""
+echo -e "${ORANGE}Frostty has been uninstalled.${NC}"
+echo -e "${MUTED}If you modified your shell config manually, please check it to ensure all references are removed.${NC}"
+echo -e ""
