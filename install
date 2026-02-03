@@ -135,15 +135,7 @@ else
         fi
       fi
 
-      if [ "$os" = "darwin" ]; then
-        avx2=$(sysctl -n hw.optional.avx2_0 2>/dev/null || echo 0)
-        if [ "$avx2" != "1" ]; then
-          needs_baseline=true
-        fi
-      fi
-    fi
 
-    target="$os-$arch"
     if [ "$needs_baseline" = "true" ]; then
       target="$target-baseline"
     fi
@@ -168,16 +160,10 @@ else
 
     if [ -z "$requested_version" ]; then
         url="https://github.com/iamtheretronerd/frostty/releases/latest/download/$filename"
-        response=$(curl -s https://api.github.com/repos/iamtheretronerd/frostty/releases/latest)
-        specific_version=$(echo "$response" | grep '"tag_name":' | cut -d '"' -f 4)
-        # Strip potential v or V prefix
-        specific_version=${specific_version#[vV]}
+        specific_version=$(curl -s https://api.github.com/repos/iamtheretronerd/frostty/releases/latest | sed -n 's/.*"tag_name": *"v\([^"]*\)".*/\1/p')
 
-        if [[ -z "$specific_version" ]]; then
+        if [[ $? -ne 0 || -z "$specific_version" ]]; then
             echo -e "${RED}Failed to fetch version information${NC}"
-            echo -e "Debug info: API response did not contain tag_name"
-            # Only print first few lines of response to avoid spamming
-            echo "$response" | head -n 10
             exit 1
         fi
     else
@@ -332,15 +318,7 @@ download_and_install() {
         unzip -q "$tmp_dir/$filename" -d "$tmp_dir"
     fi
 
-    if [ -f "$tmp_dir/frostty" ]; then
-        mv "$tmp_dir/frostty" "$INSTALL_DIR"
-    elif [ -f "$tmp_dir/bin/frostty" ]; then
-        mv "$tmp_dir/bin/frostty" "$INSTALL_DIR"
-    else
-        echo -e "${RED}Error: frostty binary not found in archive.${NC}"
-        rm -rf "$tmp_dir"
-        exit 1
-    fi
+    mv "$tmp_dir/frostty" "$INSTALL_DIR"
     chmod 755 "${INSTALL_DIR}/frostty"
     rm -rf "$tmp_dir"
 }
