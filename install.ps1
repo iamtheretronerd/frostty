@@ -22,7 +22,7 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
 } else {
     Write-Host "Fetching version $Version..." -ForegroundColor DarkGray
     $Version = $Version.TrimStart("v")
-    $Release = Invoke-RestMethod "https://api.github.com/repos/$Repo/releases/tags/v$Version"
+    $Release = Invoke-RestMethod "https://api.github.com/repos/$Repo/releases/tags/$Version"
 }
 
 # Find Windows asset
