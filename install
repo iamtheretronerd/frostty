@@ -326,7 +326,24 @@ download_and_install() {
         unzip -q "$tmp_dir/$filename" -d "$tmp_dir"
     fi
 
-    mv "$tmp_dir/frostty" "$INSTALL_DIR"
+    # Find the binary - archives may have it at root, in bin/, or in a subdirectory
+    local binary=""
+    if [ -f "$tmp_dir/frostty" ]; then
+        binary="$tmp_dir/frostty"
+    elif [ -f "$tmp_dir/bin/frostty" ]; then
+        binary="$tmp_dir/bin/frostty"
+    else
+        # Search recursively as a fallback
+        binary=$(find "$tmp_dir" -name "frostty" -type f | head -n 1)
+    fi
+
+    if [ -z "$binary" ]; then
+        echo -e "${RED}Error: frostty binary not found in archive${NC}"
+        rm -rf "$tmp_dir"
+        exit 1
+    fi
+
+    mv "$binary" "$INSTALL_DIR"
     chmod 755 "${INSTALL_DIR}/frostty"
     rm -rf "$tmp_dir"
 }
