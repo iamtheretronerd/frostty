@@ -26,7 +26,7 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
 }
 
 # Find Windows asset
-$Asset = $Release.assets | Where-Object { $_.name -like "*windows-x64.zip" }
+$Asset = $Release.assets | Where-Object { $_.name -eq "frostty-windows-x64.zip" }
 
 if (-not $Asset) {
     Write-Host "Windows build not found in release." -ForegroundColor Red
